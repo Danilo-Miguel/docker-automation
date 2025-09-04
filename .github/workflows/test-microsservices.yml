@@ -32,7 +32,6 @@ jobs:
 
   test-product-service:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
