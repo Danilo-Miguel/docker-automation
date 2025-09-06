@@ -26,6 +26,7 @@ jobs:
         docker-compose --version
 
     - name: Cria .env para todos os serviços
+      working-directory: burguer-app
       run: |
         echo "MONGO_URI=${{ secrets.MONGO_URI }}" > user-service/.env
         echo "MONGO_URI=${{ secrets.MONGO_URI }}" > auth-service/.env
@@ -33,6 +34,7 @@ jobs:
         echo "MONGO_URI=${{ secrets.MONGO_URI }}" > order-service/.env
 
     - name: Build and run Docker containers
+      working-directory: burguer-app
       run: |
         docker-compose -f docker-compose.yml -f docker-compose.override.yml down
         docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d --build
