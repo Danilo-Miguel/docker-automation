@@ -3,7 +3,7 @@ name: Docker dev workflow
 on:
     push:
         branches:
-        - aula-6
+        - aula-06
     pull_request:
         branches:
         - aula-06
