@@ -22,10 +22,10 @@ jobs:
         - name: Build images
           working-directory: burguer-app
           run: |
-            docker build -t ${{ secrets.DOCKER_USERNAME }}/user-service:2.0 ./burger-app/user-service
-            docker build -t ${{ secrets.DOCKER_USERNAME }}/auth-service:2.0 ./burger-app/auth-service
-            docker build -t ${{ secrets.DOCKER_USERNAME }}/product-service:2.0 ./burger-app/product-service
-            docker build -t ${{ secrets.DOCKER_USERNAME }}/order-service:2.0 ./burger-app/order-service
+            docker build -t ${{ secrets.DOCKER_USERNAME }}/user-service:2.0 ./burguer-app/user-service
+            docker build -t ${{ secrets.DOCKER_USERNAME }}/auth-service:2.0 ./burguer-app/auth-service
+            docker build -t ${{ secrets.DOCKER_USERNAME }}/product-service:2.0 ./burguer-app/product-service
+            docker build -t ${{ secrets.DOCKER_USERNAME }}/order-service:2.0 ./burguer-app/order-service
 
         - name: Push images
           run: |
