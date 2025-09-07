@@ -1,84 +1,91 @@
-name: Docker dev workflow
+name: Docker Dev Workflow
 
 on:
-    push:
-        branches:
-        - aula-06
-    pull_request:
-        branches:
-        - aula-06
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   docker-up:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      # 1️⃣ Clonar o repositório
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      # 2️⃣ Configurar Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Install Docker Compose
-      run: |
-        if ! command -v docker-compose &> /dev/null
-        then
-          sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
+      # 3️⃣ Instalar Docker Compose
+      - name: Install Docker Compose
+        run: |
+          if ! command -v docker-compose &> /dev/null; then
+            sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+          fi
           docker-compose --version
-        fi
 
-    - name: Mascarar variáveis de ambiente sensíveis
-      run: |
-        echo "::add-mask::${{ secrets.MONGO_URI }}" 
+      # 4️⃣ Mascarar MONGO_URI secret
+      - name: Mask MONGO_URI secret
+        run: echo "::add-mask::${{ secrets.MONGO_URI }}"
 
-    - name: Cria .env para todos os serviços
-      working-directory: burguer-app
-      run: |
-           for service in auth-service user-service order-service product-service; do
-             echo "MONGO_URI=${{ secrets.MONGO_URI }}" > .env.$service
-           done
+      # 5️⃣ Criar .env para todos os microsserviços
+      - name: Create .env files
+        working-directory: burguer-app
+        run: |
+          for service in user-service product-service order-service auth-service; do
+            mkdir -p $service
+            echo "MONGO_URI=${{ secrets.MONGO_URI }}" > $service/.env
+          done
 
+      # 6️⃣ Exportar variável de ambiente (opcional)
+      - name: Export MONGO_URI
+        run: export MONGO_URI=${{ secrets.MONGO_URI }}
 
-    - name: Build and run Docker containers
-      working-directory: burguer-app
-      run: |
-        docker-compose -f docker-compose.yml -f docker-compose.override.yml down
-        docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d --build
+      # 7️⃣ Subir containers (override de dev)
+      - name: Bring up Docker Compose (Dev)
+        working-directory: burguer-app
+        run: |
+          docker-compose -f docker-compose.yml -f docker-compose.override.yml down --volumes
+          docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d --build
 
-    - name: Waiting for mongo to be ready
-      run: 
-        for i in {1..30}; do
-          nc -z localhost 27017 && break
-          echo "Waiting for MongoDB to be ready..."
-          sleep 2
-        done
+      # 8️⃣ Esperar MongoDB inicializar
+      - name: Wait for MongoDB
+        run: |
+          for i in {1..30}; do
+            nc -z localhost 27017 && break
+            echo "Waiting for MongoDB..."
+            sleep 2
+          done
 
-    - name: Test auth-service
-      working-directory: burguer-app/auth-service
-      run: |
-        pip install -r requirements.txt
-        pytest -v
-    
-    - name: Test User-service
-      working-directory: burguer-app/user-service
-      run: |
-        pip install -r requirements.txt
-        pytest -v
-        
-    - name: Test order-service
-      working-directory: burguer-app/order-service
-      run: |
-        pip install -r requirements.txt
-        pytest -v    
+      # 9️⃣ Testar todos os serviços (paralelo possível em jobs separados se desejar)
+      - name: Test auth-service
+        working-directory: burguer-app/auth-service
+        run: |
+          pip install -r requirements.txt
+          pytest -v
 
-    - name: Test product-service
-      working-directory: burguer-app/product-service
-      run: |
-        pip install -r requirements.txt
-        pytest -v
+      - name: Test order-service
+        working-directory: burguer-app/order-service
+        run: |
+          pip install -r requirements.txt
+          pytest -v
 
+      - name: Test product-service
+        working-directory: burguer-app/product-service
+        run: |
+          pip install -r requirements.txt
+          pytest -v
 
-    - name: Shut down Docker containers
-      working-directory: burguer-app
-      run: docker-compose down  --volumes
+      - name: Test user-service
+        working-directory: burguer-app/user-service
+        run: |
+          pip install -r requirements.txt
+          pytest -v
+
+      # 🔟 Parar containers ao final
+      - name: Shut down containers
+        working-directory: burguer-app
+        run: docker-compose down --volumes
