@@ -82,14 +82,12 @@ jobs:
       working-directory: burguer-app
       run: docker-compose down --volumes
 
-    - name: Verificar vulnerabilidades de segurança com Trivy
+    - name: Verificar vulnerabilidades nas imagens com trivy
       run: |
         sudo apt-get update
         sudo apt-get install -y wget
         wget https://github.com/aquasecurity/trivy/releases/download/v0.66.0/trivy_0.66.0_Linux-64bit.deb
         sudo dpkg -i trivy_0.66.0_Linux-64bit.deb
-
-
 
     - name: Scan auth-service image
       run: trivy image --severity HIGH,CRITICAL  burguer-app-auth-service:latest
@@ -99,6 +97,6 @@ jobs:
 
     - name: Scan order-service image
       run: trivy image --severity HIGH,CRITICAL  burguer-app-order-service:latest
-    
+
     - name: Scan product-service image
       run: trivy image --severity HIGH,CRITICAL  burguer-app-product-service:latest
