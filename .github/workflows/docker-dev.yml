@@ -86,8 +86,10 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y wget
-        wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_066.0_Linux-64bit.deb
-        sudo dpkg -i trivy_066.0_Linux-64bit.deb
+        wget https://github.com/aquasecurity/trivy/releases/download/v0.66.0/trivy_0.66.0_Linux-64bit.deb
+        sudo dpkg -i trivy_0.66.0_Linux-64bit.deb
+
+
 
     - name: Scan auth-service image
       run: trivy image. --severity HIGH, CRITICAL  burguer-app_auth-service:latest
