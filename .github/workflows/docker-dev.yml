@@ -48,7 +48,7 @@ jobs:
     - name: Waiting for mongo to be ready
       run: 
         for i in {1..30}; do
-          nc -z localhost 27017 && echo "MongoDB is up!" && exit 0
+          nc -z localhost 27017 && break
           echo "Waiting for MongoDB to start..."
           sleep 2
         done
