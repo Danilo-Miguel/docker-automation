@@ -28,7 +28,7 @@ jobs:
           docker-compose --version
         fi
 
-    - name:  Mascarar variáveis de ambiente sensíveis
+    - name: Mascarar variáveis de ambiente sensíveis
       run: |
         echo "::add-mask::${{ secrets.MONGO_URI }}"    
 
@@ -39,11 +39,29 @@ jobs:
           echo "MONGO_URI=${{ secrets.MONGO_URI }}" > $service/.env
         done
 
+    # -----------------------------
+    # NOVA PARTE: Gerar SemVer automático
+    # -----------------------------
+    - name: Generate SemVer (commit hash)
+      id: semver
+      run: |
+        # Pega os 7 primeiros caracteres do commit hash
+        VERSION=$(echo "${GITHUB_SHA}" | cut -c1-7)
+        echo "IMAGE_TAG=${VERSION}" >> $GITHUB_ENV
+
+    # -----------------------------
+    # Build Docker containers usando tag SemVer
+    # -----------------------------
     - name: Build and run Docker containers
       working-directory: burguer-app
       run: |
         docker-compose -f docker-compose.yml -f docker-compose.override.yml down
-        docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d --build
+        # Build com tag SemVer + latest
+        for service in auth-service user-service order-service product-service; do
+          docker build -t burguer-app-${service}:${{ env.IMAGE_TAG }} ./$service
+          docker tag burguer-app-${service}:${{ env.IMAGE_TAG }} burguer-app-${service}:latest
+        done
+        docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
 
     - name: Waiting for mongo to be ready
       run: |
@@ -53,6 +71,9 @@ jobs:
           sleep 2
         done
 
+    # -----------------------------
+    # TESTES: manter como está
+    # -----------------------------
     - name: Test auth-service
       working-directory: burguer-app/auth-service
       run: |
@@ -77,11 +98,13 @@ jobs:
         pip install -r requirements.txt
         pytest -v
 
-
     - name: Shut down Docker containers
       working-directory: burguer-app
       run: docker-compose down --volumes
 
+    # -----------------------------
+    # TRIVY: manter como está
+    # -----------------------------
     - name: Verificar vulnerabilidades nas imagens com trivy
       run: |
         sudo apt-get update
@@ -90,13 +113,13 @@ jobs:
         sudo dpkg -i trivy_0.66.0_Linux-64bit.deb
 
     - name: Scan auth-service image
-      run: trivy image --severity HIGH,CRITICAL  burguer-app-auth-service:latest
+      run: trivy image --severity HIGH,CRITICAL  burguer-app-auth-service:${{ env.IMAGE_TAG }}
 
     - name: Scan user-service image
-      run: trivy image --severity HIGH,CRITICAL  burguer-app-user-service:latest
+      run: trivy image --severity HIGH,CRITICAL  burguer-app-user-service:${{ env.IMAGE_TAG }}
 
     - name: Scan order-service image
-      run: trivy image --severity HIGH,CRITICAL  burguer-app-order-service:latest
+      run: trivy image --severity HIGH,CRITICAL  burguer-app-order-service:${{ env.IMAGE_TAG }}
 
     - name: Scan product-service image
-      run: trivy image --severity HIGH,CRITICAL  burguer-app-product-service:latest
+      run: trivy image --severity HIGH,CRITICAL  burguer-app-product-service:${{ env.IMAGE_TAG }}
