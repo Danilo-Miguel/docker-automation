@@ -3,10 +3,10 @@ name: Docker dev workflow
 on:
     push:
         branches:
-        - aula-03
+        - aula-05
     pull_request:
         branches:
-        - aula-03
+        - aula-05
 
 jobs:
   docker-up:
@@ -17,7 +17,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v2s
 
     - name: Install Docker Compose
       run: |
@@ -25,13 +25,18 @@ jobs:
         sudo chmod +x /usr/local/bin/docker-compose
         docker-compose --version
 
+    - name: Mascarar MONGO_URI secret
+      run: echo "::add-mask::${{ secrets.MONGO_URI }}"
+
     - name: Cria .env para todos os serviços
       working-directory: burguer-app
       run: |
-        echo "MONGO_URI=${{ secrets.MONGO_URI }}" > user-service/.env
-        echo "MONGO_URI=${{ secrets.MONGO_URI }}" > auth-service/.env
-        echo "MONGO_URI=${{ secrets.MONGO_URI }}" > product-service/.env
-        echo "MONGO_URI=${{ secrets.MONGO_URI }}" > order-service/.env
+        for service in auth-service user-service order-service product-service; do
+          echo "MONGO_URI=${{ secrets.MONGO_URI }}" > ./$service/.env
+        done
+        
+    - name: Export MONGO_URI
+      run: echo "MONGO_URI=${{ secrets.MONGO_URI }}    
 
     - name: Build and run Docker containers
       working-directory: burguer-app
@@ -40,7 +45,13 @@ jobs:
         docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d --build
 
     - name: Waiting for mongo to be ready
-      run: sleep 20
+      run: |
+       for i in {1..30}; do
+        nc -z localhost 27017 && break
+        echo "Waiting for MongoDB to be ready..."
+        sleep 2
+       done
+        
 
     - name: Test auth-service
       working-directory: burguer-app/auth-service
