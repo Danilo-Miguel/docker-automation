@@ -46,7 +46,7 @@ jobs:
         docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d --build
 
     - name: Waiting for mongo to be ready
-      run: 
+      run: |
         for i in {1..30}; do
           nc -z localhost 27017 && break
           echo "Waiting for MongoDB to start..."
