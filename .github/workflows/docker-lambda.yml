@@ -1,27 +1,32 @@
-name: Deploy Lambda Function
+name: Docker Lambda functions
 
 on:
   push:
-    branches: [ "aula-05" ]
+    branches:
+      - aula-05
 
 env:
   FUNCTION_NAME: auth-service-lambda
-  ZIP_FILE: auth_service_lambda.zip
+  ZIP_FILE: auth-service-lambda.zip
   RUNTIME: python3.12
   HANDLER: lambda_function.lambda_handler
   REGION: us-east-1
 
-
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    deploy:
+      runs-on: ubuntu-latest
 
-    steps:
-      # 4.1 – Checkout
+      steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 4.2 – Configurar credenciais AWS
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+    
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -29,25 +34,22 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.REGION }}
 
-      # 4.3 – Empacotar função Python
-      - name: Package Lambda
+      - name: Empacar função Lambda
         run: |
+          # 4.3 – Package Lambda    
           cd ./burguer-app/auth-service
           pip install -r requirements-dev.txt -t .
-          zip -r ../../${{ env.ZIP_FILE }} .
-
-      # 4.4 – Deploy Lambda
-      - name: Deploy Lambda Function
+          zip -r ../../${{ env.ZIP_FILE }} .    
+      - name: Deploy Lambda
         run: |
+          # 4.4 – Deploy Lambda
           if aws lambda get-function --function-name ${{ env.FUNCTION_NAME }}; then
-            aws lambda update-function-code \
-              --function-name ${{ env.FUNCTION_NAME }} \
-              --zip-file fileb://${{ env.ZIP_FILE }}
+            aws lambda update-function-code --function-name ${{ env.FUNCTION_NAME }} --zip-file fileb://${{ env.ZIP_FILE }}
           else
-            aws lambda create-function \
-              --function-name ${{ env.FUNCTION_NAME }} \
+            aws lambda create-function --function-name ${{ env.FUNCTION_NAME }} \
               --runtime ${{ env.RUNTIME }} \
-              --role ${{ secrets.LAMBDA_ROLE_ARN }} \
+              --role ${{ secrets.AWS_LAMBDA_ROLE }} \
               --handler ${{ env.HANDLER }} \
               --zip-file fileb://${{ env.ZIP_FILE }}
           fi
+  
