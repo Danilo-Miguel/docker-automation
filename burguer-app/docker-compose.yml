@@ -1,4 +1,4 @@
-version: '3.9'
+version: '1.0'
 
 services:
   auth-service:
@@ -47,7 +47,7 @@ services:
     env_file:
       - ./product-service/.env
     networks:
-      - microservices-network
+      - microservices-network    
 
 networks:
   microservices-network:
