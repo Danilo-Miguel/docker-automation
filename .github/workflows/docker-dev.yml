@@ -123,6 +123,29 @@ jobs:
 
     - name: Scan product-service image
       run: trivy image --severity HIGH,CRITICAL  burguer-app-product-service:${{ env.IMAGE_TAG }}
-      
+
     - name: List Docker images
       run: docker images
+
+    - name: Rollback to previous version
+      if: failure()  # executa apenas se algum step falhar
+      working-directory: burguer-app
+      run: |
+        echo "Rollback automático: usando as imagens geradas anteriormente"
+
+        for service in auth-service user-service order-service product-service; do
+          # Pega a penúltima tag gerada (última antes da build atual)
+          PREV_TAG=$(docker images burguer-app-$service --format "{{.Tag}}" | grep -v latest | tail -n 2 | head -n 1)
+
+          if [ -z "$PREV_TAG" ]; then
+            echo "Nenhuma versão anterior encontrada para $service, rollback ignorado."
+          else
+            echo "Rollback do $service para a tag $PREV_TAG"
+            # Atualiza latest para apontar para a versão anterior
+            docker tag burguer-app-$service:$PREV_TAG burguer-app-$service:latest
+          fi
+        done
+
+        # Reinicia os containers usando latest (agora apontando para a versão anterior)
+        docker-compose -f docker-compose.yml -f docker-compose.override.yml down
+        docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d   
