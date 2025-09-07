@@ -81,3 +81,22 @@ jobs:
     - name: Shut down Docker containers
       working-directory: burguer-app
       run: docker-compose down --volumes
+
+    - name: Verificar vulnerabilidades de segurança com Trivy
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget
+        wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_065.0_Linux-64bit.deb
+        sudo dpkg -i trivy_065.0_Linux-64bit.deb
+
+    - name: Scan auth-service image
+      run: trivy image. --severity HIGH, CRITICAL  burguer-app_auth-service:latest
+
+    - name: Scan user-service image
+      run: trivy image. --severity HIGH, CRITICAL  burguer-app_user-service:latest
+
+    - name: Scan order-service image
+      run: trivy image. --severity HIGH, CRITICAL  burguer-app_order-service:latest
+    
+    - name: Scan product-service image
+      run: trivy image. --severity HIGH, CRITICAL  burguer-app_product-service:latest      
