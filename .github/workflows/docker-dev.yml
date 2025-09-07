@@ -92,13 +92,13 @@ jobs:
 
 
     - name: Scan auth-service image
-      run: trivy image --severity HIGH,CRITICAL  burguer-app_auth-service:latest
+      run: trivy image --severity HIGH,CRITICAL auth-service:latest
 
     - name: Scan user-service image
-      run: trivy image --severity HIGH,CRITICAL  burguer-app_user-service:latest
+      run: trivy image --severity HIGH,CRITICAL user-service:latest
 
     - name: Scan order-service image
-      run: trivy image --severity HIGH,CRITICAL  burguer-app_order-service:latest
-    
+      run: trivy image --severity HIGH,CRITICAL order-service:latest
+
     - name: Scan product-service image
-      run: trivy image --severity HIGH,CRITICAL  burguer-app_product-service:latest      
+      run: trivy image --severity HIGH,CRITICAL product-service:latest
