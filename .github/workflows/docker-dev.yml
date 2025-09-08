@@ -114,3 +114,22 @@ jobs:
 
     - name: List Docker images
       run: docker images  
+
+    - name: Roolback
+      if: failure()
+      working-directory: burguer-app
+      run: |
+       echo "Roolback automático: usado as imagens anteriores"
+
+       for service in auth-service user-service order-service product-service; do
+         PREV_TAG=$(docker images burguer-app-${service} --format "{{.Tag}}" | grep -v latest | head -n 2)
+
+         if [ -z "$PREV_TAG" ]; then
+           echo "No previous image found for $service, skipping rollback."
+         else
+           docker tag burguer-app-${service}:${PREV_TAG} burguer-app-${service}:latest
+           echo "Rolled back $service to tag $PREV_TAG"
+         fi 
+        done
+       docker-compose -f docker-compose.yml -f docker-compose.override.yml down 
+       docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d --build
