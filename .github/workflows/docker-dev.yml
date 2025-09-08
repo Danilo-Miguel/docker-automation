@@ -39,10 +39,20 @@ jobs:
           echo "MONGO_URI=${{ secrets.MONGO_URI }}" > $service/.env
         done
 
+    - name: Generate SemVer (commit hash)
+      id: semver
+      run: |
+        VERSION=$(echo "${GITHUB_SHA}" | cut -c1-7)
+        echo "IMAGE_TAG=${VERSION}" >> $GITHUB_ENV
+
     - name: Build and run Docker containers
       working-directory: burguer-app
       run: |
         docker-compose -f docker-compose.yml -f docker-compose.override.yml down
+        for build in auth-service user-service order-service product-service; do
+          docker build -t burguer-app-${service}:${{ env.IMAGE_TAG }} ./service
+          docker tag burguer-app-${service}:${{ env.IMAGE_TAG }} burguer-app-${service}:latest
+        done
         docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d --build
 
     - name: Waiting for mongo to be ready
