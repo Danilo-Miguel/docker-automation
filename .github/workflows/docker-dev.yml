@@ -111,3 +111,6 @@ jobs:
 
     - name: Scan product-service image
       run: trivy image --severity HIGH,CRITICAL  burguer-app-product-service:latest
+
+    - name: List Docker images
+      run: docker images  
