@@ -2,6 +2,7 @@ from flask import Flask, session
 from controllers.auth_controller import auth_bp
 from dotenv import load_dotenv
 from flask import redirect, url_for
+from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 
 import os
 
@@ -23,6 +24,11 @@ app.secret_key = os.getenv("SECRET_KEY")
 
 # Registra o blueprint de autenticação
 app.register_blueprint(auth_bp, url_prefix='/auth')
+
+@app.route("/metrics")
+def metrics():
+    """Endpoint de métricas para Prometheus"""
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 # Redireciona a rota raiz para a página de login
 @app.route('/')
